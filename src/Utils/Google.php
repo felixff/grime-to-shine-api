@@ -2,6 +2,7 @@
 
 namespace GTS\Api\Utils;
 
+use DateTimeInterface;
 use Google_Service_Calendar;
 
 class Google
@@ -33,7 +34,7 @@ class Google
         }
     }
 
-    public function getEvents()
+    public function getEvents(): array
     {
         // Get the API client and construct the service object.
         $service = new \Google_Service_Calendar($this->client);
@@ -47,18 +48,53 @@ class Google
         );
         $results = $service->events->listEvents($calendarId, $optParams);
         $events = $results->getItems();
+        $response = [];
+
+        foreach ($events as $event) {
+            $eventToReturn = new \stdClass();
+            $eventToReturn->date = (new \DateTime($event->getStart()->dateTime))->format('d-m-Y');
+            $eventToReturn->time = (new \DateTime($event->getStart()->dateTime))->format('H:m');
+
+            $response[] = $eventToReturn;
+        }
 
         if (empty($events)) {
-            print "No upcoming events found.\n";
+            return [];
         } else {
-            print "Upcoming events:\n";
-            foreach ($events as $event) {
-                $start = $event->start->dateTime;
-                if (empty($start)) {
-                    $start = $event->start->date;
-                }
-                printf("%s (%s)\n", $event->getSummary(), $start);
-            }
+            return $response;
+        }
+    }
+
+    public function addEvent($event)
+    {
+        // Get the API client and construct the service object.
+        $service = new \Google_Service_Calendar($this->client);
+
+        $calendarId = 'primary';
+        $time = explode(':', $event['time']);
+        $startDate = (new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]);
+        $endDate = ((new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]))->add(new \DateInterval('PT30M'));
+
+        $startCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
+        $startCalendarDateTime->setDateTime($startDate->format(DateTimeInterface::RFC3339));
+        $endCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
+        $endCalendarDateTime->setDateTime($endDate->format(DateTimeInterface::RFC3339));
+
+        $optParams = array(
+            'summary' => 'Car Valeting',
+            'location' => $event['address'],
+            'description' => true,
+            'start' => $startCalendarDateTime,
+            'end' => $endCalendarDateTime
+        );
+
+        $event = new \Google_Service_Calendar_Event($optParams);
+        $event = $service->events->insert($calendarId, $event);
+
+        if (empty($event)) {
+            throw new \Exception('Booking has failed');
+        } else {
+            return $event;
         }
     }
 

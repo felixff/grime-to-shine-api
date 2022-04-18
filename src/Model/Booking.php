@@ -6,13 +6,13 @@ use GTS\Api\Utils\Google;
 
 class Booking
 {
-    public function getBookings()
+    public function getBookings(): array
     {
         return Google::getInstance()->getEvents();
     }
 
-    public function addBooking()
+    public function addBooking($event)
     {
-        return false;
+        return Google::getInstance()->addEvent($event);
     }
 }
