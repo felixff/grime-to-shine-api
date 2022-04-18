@@ -53,9 +53,12 @@ class Google
         foreach ($events as $event) {
             $eventToReturn = new \stdClass();
             $eventToReturn->date = (new \DateTime($event->getStart()->dateTime))->format('d-m-Y');
-            $eventToReturn->time = (new \DateTime($event->getStart()->dateTime))->format('H:m');
 
-            $response[] = $eventToReturn;
+            if (isset($response[$eventToReturn->date]) === false) {
+                $response[$eventToReturn->date] = [];
+            }
+
+            $response[$eventToReturn->date][] = (new \DateTime($event->getStart()->dateTime))->format('H:m');
         }
 
         if (empty($events)) {
