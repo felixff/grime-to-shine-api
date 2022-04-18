@@ -1,0 +1,12 @@
+{
+  "autoload": {
+    "psr-4": {
+      "GTS\\Api\\": "src/"
+    }
+  },
+  "require": {
+    "google/apiclient": "^2.0",
+    "guzzlehttp/guzzle": "~7.0",
+    "google/recaptcha": "^1.2"
+  }
+}
