@@ -52,12 +52,14 @@ class Google
         foreach ($events as $event) {
             $eventToReturn = new \stdClass();
             $eventToReturn->date = (new \DateTime($event->getStart()->dateTime))->format('Y-m-d');
+            $eventToReturn->start = (new \DateTime($event->getStart()->dateTime))->format('H:i');
+            $eventToReturn->end = (new \DateTime($event->getEnd()->dateTime))->format('H:i');
 
             if (isset($response[$eventToReturn->date]) === false) {
                 $response[$eventToReturn->date] = [];
             }
 
-            $response[$eventToReturn->date][] = (new \DateTime($event->getStart()->dateTime))->format('H:i');
+            $response[$eventToReturn->date][] = $eventToReturn;
         }
 
         if (empty($events)) {
@@ -75,7 +77,7 @@ class Google
         $calendarId = 'primary';
         $time = explode(':', $event['time']);
         $startDate = (new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]);
-        $endDate = ((new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]))->add(new \DateInterval('PT30M'));
+        $endDate = ((new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]))->add(new \DateInterval('PT60M'));
 
         $startCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
         $startCalendarDateTime->setDateTime($startDate->format(DateTimeInterface::RFC3339));
@@ -83,9 +85,9 @@ class Google
         $endCalendarDateTime->setDateTime($endDate->format(DateTimeInterface::RFC3339));
 
         $optParams = array(
-            'summary' => 'Car Valeting',
-            'location' => $event['address'],
-            'description' => true,
+            'summary' => 'Booking Request',
+            'location' => "{$event['address']}, {$event['postcode']}",
+            'description' => $event['message'] . PHP_EOL . "Telephone: {$event['telephone']}" . PHP_EOL . "Email: {$event['email']}",
             'start' => $startCalendarDateTime,
             'end' => $endCalendarDateTime
         );
