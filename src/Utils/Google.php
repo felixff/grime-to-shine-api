@@ -41,10 +41,9 @@ class Google
 
         $calendarId = 'primary';
         $optParams = array(
-            'maxResults' => 10,
+            'maxResults' => 100,
             'orderBy' => 'startTime',
             'singleEvents' => true,
-            'timeMin' => date('c'),
         );
         $results = $service->events->listEvents($calendarId, $optParams);
         $events = $results->getItems();
@@ -52,13 +51,13 @@ class Google
 
         foreach ($events as $event) {
             $eventToReturn = new \stdClass();
-            $eventToReturn->date = (new \DateTime($event->getStart()->dateTime))->format('d-m-Y');
+            $eventToReturn->date = (new \DateTime($event->getStart()->dateTime))->format('Y-m-d');
 
             if (isset($response[$eventToReturn->date]) === false) {
                 $response[$eventToReturn->date] = [];
             }
 
-            $response[$eventToReturn->date][] = (new \DateTime($event->getStart()->dateTime))->format('H:m');
+            $response[$eventToReturn->date][] = (new \DateTime($event->getStart()->dateTime))->format('H:i');
         }
 
         if (empty($events)) {
