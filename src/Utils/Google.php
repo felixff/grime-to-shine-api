@@ -3,7 +3,9 @@
 namespace GTS\Api\Utils;
 
 use DateTimeInterface;
+use Exception;
 use Google_Service_Calendar;
+use Google_Service_Calendar_Event;
 
 class Google
 {
@@ -30,13 +32,15 @@ class Google
             $this->setAccessToken();
             $this->refreshToken();
         } else {
-            throw new \Exception('Google Integration has not been setup');
+            throw new Exception('Google Integration has not been setup');
         }
     }
 
-    public function getEvents(): array
+    /**
+     * @throws Exception
+     */
+    public function getEvents(): \stdClass
     {
-        // Get the API client and construct the service object.
         $service = new \Google_Service_Calendar($this->client);
 
         $calendarId = 'primary';
@@ -44,10 +48,12 @@ class Google
             'maxResults' => 100,
             'orderBy' => 'startTime',
             'singleEvents' => true,
+            'timeMin' => (new \DateTime('now', new \DateTimeZone('Europe/London')))->add(new \DateInterval('P1D'))->setTime(0, 0)->format(DateTimeInterface::RFC3339)
         );
+
         $results = $service->events->listEvents($calendarId, $optParams);
         $events = $results->getItems();
-        $response = [];
+        $eventsToReturn = [];
 
         foreach ($events as $event) {
             $eventToReturn = new \stdClass();
@@ -55,39 +61,56 @@ class Google
             $eventToReturn->start = (new \DateTime($event->getStart()->dateTime))->format('H:i');
             $eventToReturn->end = (new \DateTime($event->getEnd()->dateTime))->format('H:i');
 
-            if (isset($response[$eventToReturn->date]) === false) {
-                $response[$eventToReturn->date] = [];
+            if (isset($eventsToReturn[$eventToReturn->date]) === false) {
+                $eventsToReturn[$eventToReturn->date] = [];
             }
 
-            $response[$eventToReturn->date][] = $eventToReturn;
+            $eventsToReturn[$eventToReturn->date][] = $eventToReturn;
         }
 
-        if (empty($events)) {
-            return [];
-        } else {
-            return $response;
-        }
+        $response = new \stdClass();
+        $response->existingBookings = $eventsToReturn;
+
+        return $response;
     }
 
-    public function addEvent($event)
+    /**
+     * @throws Exception
+     */
+    public function addEvent($event): Google_Service_Calendar_Event
     {
-        // Get the API client and construct the service object.
         $service = new \Google_Service_Calendar($this->client);
 
         $calendarId = 'primary';
         $time = explode(':', $event['time']);
-        $startDate = (new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]);
-        $endDate = ((new \DateTime($event['date'],new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]))->add(new \DateInterval('PT60M'));
+        $startDate = (new \DateTime($event['date'], new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]);
+        $endDate = ((new \DateTime($event['date'], new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]));
+        $serviceLevel = ucfirst($event['serviceLevel']);
+
+        switch ($serviceLevel) {
+            case 'Extra':
+            case 'Bronze':
+                $endDate->add(new \DateInterval('PT30M'));
+                break;
+            case 'Silver':
+                $endDate->add(new \DateInterval('PT60M'));
+                break;
+            case 'Gold':
+                $endDate->add(new \DateInterval('PT90M'));
+                break;
+        }
 
         $startCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
         $startCalendarDateTime->setDateTime($startDate->format(DateTimeInterface::RFC3339));
+        $startCalendarDateTime->setTimeZone('UTC');
         $endCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
         $endCalendarDateTime->setDateTime($endDate->format(DateTimeInterface::RFC3339));
+        $endCalendarDateTime->setTimeZone('UTC');
 
         $optParams = array(
             'summary' => 'Booking Request',
             'location' => "{$event['address']}, {$event['postcode']}",
-            'description' => $event['message'] . PHP_EOL . "Telephone: {$event['telephone']}" . PHP_EOL . "Email: {$event['email']}",
+            'description' => "Name: {$event['name']}" . PHP_EOL . "Address: {$event['address']}" . PHP_EOL . "Service Level: {$serviceLevel}" . PHP_EOL . "Telephone: {$event['telephone']}" . PHP_EOL . "Email: {$event['email']}" . PHP_EOL . $event['message'],
             'start' => $startCalendarDateTime,
             'end' => $endCalendarDateTime
         );
@@ -96,7 +119,7 @@ class Google
         $event = $service->events->insert($calendarId, $event);
 
         if (empty($event)) {
-            throw new \Exception('Booking has failed');
+            throw new Exception('Booking has failed');
         } else {
             return $event;
         }

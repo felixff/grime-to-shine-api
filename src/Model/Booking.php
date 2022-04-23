@@ -2,16 +2,24 @@
 namespace GTS\Api\Model;
 
 
+use Exception;
+use Google_Service_Calendar_Event;
 use GTS\Api\Utils\Google;
 
 class Booking
 {
-    public function getBookings(): array
+    /**
+     * @throws Exception
+     */
+    public function getBookings(): \stdClass
     {
         return Google::getInstance()->getEvents();
     }
 
-    public function addBooking($event)
+    /**
+     * @throws Exception
+     */
+    public function addBooking($event): Google_Service_Calendar_Event
     {
         return Google::getInstance()->addEvent($event);
     }

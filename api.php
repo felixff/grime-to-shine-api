@@ -9,7 +9,7 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = explode( '/', $uri );
 $_POST = json_decode(file_get_contents("php://input"),true);
 
-$inDev = false;
+$inDev = true;
 
 if ($inDev === false) {
     if ((isset($uri[3]) && $uri[3] != 'booking') || !isset($uri[4])) {
