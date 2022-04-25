@@ -90,13 +90,13 @@ class Google
         switch ($serviceLevel) {
             case 'Extra':
             case 'Bronze':
-                $endDate->add(new \DateInterval('PT30M'));
-                break;
-            case 'Silver':
                 $endDate->add(new \DateInterval('PT60M'));
                 break;
+            case 'Silver':
+                $endDate->add(new \DateInterval('PT120M'));
+                break;
             case 'Gold':
-                $endDate->add(new \DateInterval('PT90M'));
+                $endDate->add(new \DateInterval('PT180M'));
                 break;
         }
 
