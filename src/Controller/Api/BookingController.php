@@ -1,8 +1,11 @@
 <?php
+
 namespace GTS\Api\Controller\Api;
 
-use Error;
+use DateTime;
+use Exception;
 use GTS\Api\Model\Booking;
+use GTS\Api\Utils\Email;
 
 class BookingController extends BaseController
 {
@@ -23,8 +26,8 @@ class BookingController extends BaseController
                 $bookings = $bookingModel->getBookings();
 
                 $responseData = json_encode($bookings);
-            } catch (Error $e) {
-                $strErrorDesc = $e->getMessage().'Something went wrong! Please contact support.';
+            } catch (Exception $e) {
+                $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
                 $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
             }
         } else {
@@ -56,11 +59,16 @@ class BookingController extends BaseController
         if (strtoupper($requestMethod) == 'POST') {
             try {
                 $bookingModel = new Booking();
-                $bookings = $bookingModel->addBooking($requestData);
+                $booking = $bookingModel->addBooking($requestData);
+                $bookingStart = $booking['start']->getDateTime();
+                $bookingContact = $requestData['name'];
+                $bookingContactTelephone = $requestData['telephone'];
+                $bookingService = $requestData['serviceLevel'];
+                $this->sendRequestEmail($bookingContact, $bookingService, $bookingContactTelephone, $bookingStart);
 
-                $responseData = json_encode($bookings);
-            } catch (Error $e) {
-                $strErrorDesc = $e->getMessage().'Something went wrong! Please contact support.';
+                $responseData = json_encode($booking);
+            } catch (Exception $e) {
+                $strErrorDesc = $e->getMessage() . '. Something went wrong! Please contact support.';
                 $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
             }
         } else {
@@ -79,5 +87,35 @@ class BookingController extends BaseController
                 array('Content-Type: application/json', $strErrorHeader)
             );
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function sendConfirmationEmail($bookingContact, $bookingService, $bookingContactTelephone, $bookingStart)
+    {
+
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function sendRequestEmail($bookingContact, $bookingService, $bookingContactTelephone, $bookingStart)
+    {
+        $bookingTime = new DateTime($bookingStart);
+        $service = ucfirst($bookingService) . ' Service';
+
+        $email = new Email();
+        $email->setRecipients(['Kieran' => 'faragau.florin+dev@gmail.com']);
+        $email->setSubject('Booking Request Received');
+        $email->setContent(
+            "<h2>Hi Kieran!</h2><br>
+                    <p>$bookingContact has requested a booking for a $service on {$bookingTime->format('d.m.Y')} at {$bookingTime->format('H:i')}</p><br>
+                    <p>They provided the following telephone number: $bookingContactTelephone</p><br>
+                    <p>Have a nice day!</p>
+                    "
+        );
+
+        $email->send();
     }
 }

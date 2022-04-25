@@ -83,8 +83,8 @@ class Google
 
         $calendarId = 'primary';
         $time = explode(':', $event['time']);
-        $startDate = (new \DateTime($event['date'], new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]);
-        $endDate = ((new \DateTime($event['date'], new \DateTimeZone('Europe/London')))->setTime((int)$time[0], (int)$time[1]));
+        $startDate = (new \DateTime($event['date']))->setTime((int)$time[0], (int)$time[1]);
+        $endDate = (new \DateTime($event['date']))->setTime((int)$time[0], (int)$time[1]);
         $serviceLevel = ucfirst($event['serviceLevel']);
 
         switch ($serviceLevel) {
@@ -100,19 +100,21 @@ class Google
                 break;
         }
 
-        $startCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
-        $startCalendarDateTime->setDateTime($startDate->format(DateTimeInterface::RFC3339));
-        $startCalendarDateTime->setTimeZone('UTC');
-        $endCalendarDateTime = new \Google_Service_Calendar_EventDateTime();
-        $endCalendarDateTime->setDateTime($endDate->format(DateTimeInterface::RFC3339));
-        $endCalendarDateTime->setTimeZone('UTC');
+        $startDateTimeGoogleAcceptedFormat = $startDate->format('Y-m-d\TH:i:s');
+        $endDateTimeGoogleAcceptedFormat = $endDate->format('Y-m-d\TH:i:s');
 
         $optParams = array(
             'summary' => 'Booking Request',
             'location' => "{$event['address']}, {$event['postcode']}",
             'description' => "Name: {$event['name']}" . PHP_EOL . "Address: {$event['address']}" . PHP_EOL . "Service Level: {$serviceLevel}" . PHP_EOL . "Telephone: {$event['telephone']}" . PHP_EOL . "Email: {$event['email']}" . PHP_EOL . $event['message'],
-            'start' => $startCalendarDateTime,
-            'end' => $endCalendarDateTime
+            'start' => [
+                'dateTime' => $startDateTimeGoogleAcceptedFormat,
+                'timeZone' => 'Europe/London',
+            ],
+            'end' => [
+                'dateTime' => $endDateTimeGoogleAcceptedFormat,
+                'timeZone' => 'Europe/London',
+            ],
         );
 
         $event = new \Google_Service_Calendar_Event($optParams);
