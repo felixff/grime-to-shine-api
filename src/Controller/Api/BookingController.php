@@ -16,7 +16,6 @@ class BookingController extends BaseController
     {
         $strErrorDesc = '';
         $requestMethod = $_SERVER["REQUEST_METHOD"];
-//        $arrQueryStringParams = $this->getQueryStringParams();
         $strErrorHeader = '';
         $responseData = 'Nothing to see here';
 
@@ -35,7 +34,6 @@ class BookingController extends BaseController
             $strErrorHeader = 'HTTP/1.1 422 Unprocessable Entity';
         }
 
-        // send output
         if (!$strErrorDesc) {
             $this->sendOutput(
                 $responseData,
@@ -106,7 +104,7 @@ class BookingController extends BaseController
         $service = ucfirst($bookingService) . ' Service';
 
         $email = new Email();
-        $email->setRecipients(['Kieran' => 'faragau.florin+dev@gmail.com']);
+        $email->setRecipients(['Kieran' => 'grimetoshinevaletingapp@gmail.com']);
         $email->setSubject('Booking Request Received');
         $email->setContent(
             "<h2>Hi Kieran!</h2><br>
