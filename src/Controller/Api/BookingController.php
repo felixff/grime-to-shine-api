@@ -49,12 +49,16 @@ class BookingController extends BaseController
             return $booking;
         } catch (Exception $e) {
             $strErrorDesc = $e->getMessage() . '. Something went wrong! Please contact support.';
+            $strErrorCode = $e->getCode();
         }
 
         if (!isset($strErrorDesc)) {
             return $responseData;
         } else {
-            return ['error' => $strErrorDesc];
+            return [
+                'error' => $strErrorDesc,
+                'code' => $strErrorCode
+            ];
         }
     }
 

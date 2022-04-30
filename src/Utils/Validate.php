@@ -21,7 +21,7 @@ class Validate
     /**
      * @throws Exception
      */
-    static function validateAndSanitiseParameters(string $action, object $parametersObject)
+    static function validateAndSanitiseParameters(string $action, object $parametersObject): object
     {
         $r = new ReflectionClass(Validate::class);
         $parameters = $r->getConstant($action);

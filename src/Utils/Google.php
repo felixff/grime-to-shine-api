@@ -81,7 +81,6 @@ class Google
     {
         $service = new \Google_Service_Calendar($this->client);
 
-        var_dump('testing');
         $calendarId = 'primary';
         $time = explode(':', $event->time);
         $startDate = (new \DateTime($event->date))->setTime((int)$time[0], (int)$time[1]);
@@ -119,7 +118,7 @@ class Google
         );
 
         $event = new \Google_Service_Calendar_Event($optParams);
-//        $event = $service->events->insert($calendarId, $event);
+        $event = $service->events->insert($calendarId, $event);
 
         if (empty($event)) {
             throw new Exception('Booking has failed');
