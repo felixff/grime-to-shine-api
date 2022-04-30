@@ -24,11 +24,11 @@ class Google
     {
         $this->client = new \Google_Client();
         $this->client->setApplicationName('grime-to-shine');
-        $this->client->setAuthConfig(__DIR__ . '/../../credentials/client_secret.json');
+        $this->client->setAuthConfig(Config::getCredentials());
         $this->client->setScopes(Google_Service_Calendar::CALENDAR_EVENTS);
         $this->client->setAccessType('offline');
 
-        if (file_exists(__DIR__ . '/../../token.json')) {
+        if (file_exists(Config::getToken())) {
             $this->setAccessToken();
             $this->refreshToken();
         } else {
@@ -81,11 +81,12 @@ class Google
     {
         $service = new \Google_Service_Calendar($this->client);
 
+        var_dump('testing');
         $calendarId = 'primary';
-        $time = explode(':', $event['time']);
-        $startDate = (new \DateTime($event['date']))->setTime((int)$time[0], (int)$time[1]);
-        $endDate = (new \DateTime($event['date']))->setTime((int)$time[0], (int)$time[1]);
-        $serviceLevel = ucfirst($event['serviceLevel']);
+        $time = explode(':', $event->time);
+        $startDate = (new \DateTime($event->date))->setTime((int)$time[0], (int)$time[1]);
+        $endDate = (new \DateTime($event->date))->setTime((int)$time[0], (int)$time[1]);
+        $serviceLevel = ucfirst($event->serviceLevel);
 
         switch ($serviceLevel) {
             case 'Extra':
@@ -105,8 +106,8 @@ class Google
 
         $optParams = array(
             'summary' => 'Booking Request',
-            'location' => "{$event['address']}, {$event['postcode']}",
-            'description' => "Name: {$event['name']}" . PHP_EOL . "Address: {$event['address']}" . PHP_EOL . "Service Level: {$serviceLevel}" . PHP_EOL . "Telephone: {$event['telephone']}" . PHP_EOL . "Email: {$event['email']}" . PHP_EOL . $event['message'],
+            'location' => "{$event->address}, {$event->postcode}",
+            'description' => "Name: {$event->name}" . PHP_EOL . "Address: {$event->address}" . PHP_EOL . "Service Level: {$serviceLevel}" . PHP_EOL . "Telephone: {$event->telephone}" . PHP_EOL . "Email: {$event->email}" . PHP_EOL . $event->message,
             'start' => [
                 'dateTime' => $startDateTimeGoogleAcceptedFormat,
                 'timeZone' => 'Europe/London',
@@ -118,7 +119,7 @@ class Google
         );
 
         $event = new \Google_Service_Calendar_Event($optParams);
-        $event = $service->events->insert($calendarId, $event);
+//        $event = $service->events->insert($calendarId, $event);
 
         if (empty($event)) {
             throw new Exception('Booking has failed');
@@ -138,7 +139,7 @@ class Google
         // Refresh the token if it's expired.
         if ($this->client->isAccessTokenExpired()) {
             $this->client->fetchAccessTokenWithRefreshToken($this->client->getRefreshToken());
-            file_put_contents(__DIR__ . '/../../token.json', json_encode($this->client->getAccessToken()));
+            file_put_contents(Config::getToken(), json_encode($this->client->getAccessToken()));
         }
     }
 }
