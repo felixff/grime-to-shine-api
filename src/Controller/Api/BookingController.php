@@ -6,6 +6,7 @@ use DateTime;
 use Exception;
 use GTS\Api\Model\Booking;
 use GTS\Api\Utils\Email;
+use stdClass;
 
 class BookingController extends BaseController
 {
@@ -14,76 +15,46 @@ class BookingController extends BaseController
      */
     public function listAction()
     {
-        $strErrorDesc = '';
-        $requestMethod = $_SERVER["REQUEST_METHOD"];
-        $strErrorHeader = '';
         $responseData = 'Nothing to see here';
 
-        if (strtoupper($requestMethod) == 'GET') {
-            try {
-                $bookingModel = new Booking();
-                $bookings = $bookingModel->getBookings();
+        try {
+            $bookingModel = new Booking();
+            $bookings = $bookingModel->getBookings();
 
-                $responseData = json_encode($bookings);
-            } catch (Exception $e) {
-                $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
-                $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
-            }
-        } else {
-            $strErrorDesc = 'Method not supported';
-            $strErrorHeader = 'HTTP/1.1 422 Unprocessable Entity';
+            $responseData = $bookings;
+        } catch (Exception $e) {
+            $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
         }
 
-        if (!$strErrorDesc) {
-            $this->sendOutput(
-                $responseData,
-                array('Content-Type: application/json', 'HTTP/1.1 200 OK')
-            );
+        if (!isset($strErrorDesc)) {
+            return $responseData;
         } else {
-            $this->sendOutput(json_encode(array('error' => $strErrorDesc)),
-                array('Content-Type: application/json', $strErrorHeader)
-            );
+            return ['error' => $strErrorDesc];
         }
     }
 
-    public function addAction()
+    public function bookEventAction(object $event)
     {
-        $strErrorDesc = '';
-        $requestMethod = $_SERVER["REQUEST_METHOD"];
-        $requestData = $_POST;
-        $strErrorHeader = '';
         $responseData = 'Nothing to see here';
 
-        if (strtoupper($requestMethod) == 'POST') {
-            try {
-                $bookingModel = new Booking();
-                $booking = $bookingModel->addBooking($requestData);
-                $bookingStart = $booking['start']->getDateTime();
-                $bookingContact = $requestData['name'];
-                $bookingContactTelephone = $requestData['telephone'];
-                $bookingService = $requestData['serviceLevel'];
-                $this->sendRequestEmail($bookingContact, $bookingService, $bookingContactTelephone, $bookingStart);
+        try {
+            $bookingModel = new Booking();
+            $booking = $bookingModel->addBooking($event);
+            $bookingStart = $booking['start']->getDateTime();
+            $bookingContact = $event->name;
+            $bookingContactTelephone = $event->telephone;
+            $bookingService = $event->serviceLevel;
+            $this->sendRequestEmail($bookingContact, $bookingService, $bookingContactTelephone, $bookingStart);
 
-                $responseData = json_encode($booking);
-            } catch (Exception $e) {
-                $strErrorDesc = $e->getMessage() . '. Something went wrong! Please contact support.';
-                $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
-            }
-        } else {
-            $strErrorDesc = 'Method not supported';
-            $strErrorHeader = 'HTTP/1.1 422 Unprocessable Entity';
+            return $booking;
+        } catch (Exception $e) {
+            $strErrorDesc = $e->getMessage() . '. Something went wrong! Please contact support.';
         }
 
-        // send output
-        if (!$strErrorDesc) {
-            $this->sendOutput(
-                $responseData,
-                array('Content-Type: application/json', 'HTTP/1.1 200 OK')
-            );
+        if (!isset($strErrorDesc)) {
+            return $responseData;
         } else {
-            $this->sendOutput(json_encode(array('error' => $strErrorDesc)),
-                array('Content-Type: application/json', $strErrorHeader)
-            );
+            return ['error' => $strErrorDesc];
         }
     }
 
