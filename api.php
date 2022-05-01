@@ -24,6 +24,10 @@ $app = AppFactory::create();
 $app->addErrorMiddleware($environment === 'development', true, true);
 $app->addBodyParsingMiddleware();
 
+if ($environment !== 'development') {
+    $app->setBasePath('/api');
+}
+
 $app->get('/api.php/bookings', function (Request $request, Response $response) {
     $queryParams = $request->getQueryParams();
 
